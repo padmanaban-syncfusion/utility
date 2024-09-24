@@ -1,0 +1,31 @@
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
+FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine AS base
+
+RUN apk update
+RUN apk add curl
+RUN apk add bash fontconfig
+RUN apk add libgdiplus --repository https://dl-3.alpinelinux.org/alpine/edge/testing/
+RUN apk add --no-cache icu-libs krb5-libs libgcc libintl libssl1.1 libstdc++ zlib tzdata git python3 py3-pip build-base python3-dev libffi-dev
+
+RUN pip install duckdb===0.9.2 dlt===0.4.2 pymysql pg8000 poetry "dlt[filesystem]" pandas===2.0.0
+
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+ENV OPENSSL_CONF=/etc/ssl/
+ENV OS_ENV=alpine
+ENV BOLD_SERVICES_HOSTING_ENVIRONMENT=docker
+ENV OPTIONAL_LIBS=mysql,oracle,postgresql
+
+RUN mkdir -p /run/nginx
+RUN apk add nginx procps jq
+
+WORKDIR /application
+
+EXPOSE 80
+EXPOSE 443
+
+COPY /application .
+
+RUN chmod +x ./entrypoint.sh
+
+CMD ./entrypoint.sh
